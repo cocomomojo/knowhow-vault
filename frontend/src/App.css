@@ -220,3 +220,12 @@ select:focus {
   background: #f8fafc;
   border: 1px dashed #cbd5e1;
 }
+
+.helper-box {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #eef2ff 100%);
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}

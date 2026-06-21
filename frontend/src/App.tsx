@@ -151,6 +151,7 @@ function App() {
             </div>
             <button onClick={handleCreateTheme} className="secondary">テーマを追加</button>
           </div>
+          <div className="helper-box">まずはテーマを作ってから、経験や気づきを残すと次のステップに進めます。</div>
           <form onSubmit={handleSubmit} className="form-grid">
             <input
               placeholder="タイトル"
@@ -199,9 +200,10 @@ function App() {
           <div className="section-heading">
             <div>
               <h2>ワークフロー</h2>
-              <p>収集した内容を、分析・整理・公開へ進めます。</p>
+              <p>収集したものを、分析・整理・公開へ進めます。</p>
             </div>
           </div>
+          <div className="helper-box">「分析」→「整理」→「ベストプラクティス化」の順で進めると、知見が自然に育ちます。</div>
           {knowhow.length === 0 ? (
             <div className="empty-state">まだノウハウがありません。まずは収集タブから追加してみてください。</div>
           ) : (
