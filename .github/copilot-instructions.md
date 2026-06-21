@@ -1,14 +1,16 @@
 # Copilot Instructions
 
-## Repository workflow
-- For functional changes or fixes, create a dedicated branch before editing.
-- Commit changes, push the branch, and open a pull request for review.
-- Do not merge without explicit confirmation from the user.
+## リポジトリ運用
+- 変更・修正・改善を行う場合は、必ず専用ブランチを作成してから作業すること。
+- 変更後はコミット・pushを行い、内容確認のため PR を作成すること。
+- すでにマージ済みの PR や既存のリモート状態を確認せずに、同じ内容で PR を再作成しないこと。
+- 変更前に必ずリモートの最新状態を取得し、ローカルとリモートの差分を確認すること。
+- ユーザーの明示的な確認がない限り、マージしないこと。
 
-## UI and accessibility checks
-- Ensure form inputs, buttons, and text have sufficient contrast.
-- Verify that text remains readable on the current background colors.
-- Prefer explicit color values for text and borders instead of relying on inherited defaults.
+## UI とアクセシビリティ確認
+- フォーム入力、ボタン、テキストのコントラストが十分に確保されていること。
+- 背景色に対してテキストが読みやすいこと。
+- 文字色やボーダーの色は、継承に頼らず明示的に指定すること。
 
-## Verification
-- Run the relevant build or test command after changes and confirm the result before reporting completion.
+## 検証
+- 変更後は、関連するビルドやテストを実行し、結果を確認してから完了を報告すること。
