@@ -229,3 +229,7 @@ select:focus {
   border: 1px solid #bfdbfe;
   color: #1d4ed8;
 }
+
+.helper-box + .helper-box {
+  margin-top: 10px;
+}
