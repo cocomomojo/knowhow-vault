@@ -141,7 +141,7 @@ export async function analyzeKnowhow(id: string) {
   const row = db.prepare('SELECT content, importance FROM knowhows WHERE id = ?').get(id) as { content: string; importance: number } | undefined;
   if (!row) return null;
   const summary = createPracticeSummary(row.content);
-  const score = calculateAnalysisScore(row.importance, row.content.length);
+  const score = calculateAnalysisScore(row.importance, row.content?.length ?? 0);
   const analysisId = uuid();
   const createdAt = nowIso();
   db.run('INSERT INTO analyses (id, knowhow_id, summary, score, status, created_at) VALUES (?, ?, ?, ?, ?, ?)', [analysisId, id, summary, score, 'analyzed', createdAt]);
@@ -159,14 +159,16 @@ export async function organizeKnowhow(id: string) {
 
 export async function publishKnowhow(id: string) {
   const db = await getDb();
-  const row = db.prepare('SELECT title, content FROM knowhows WHERE id = ?').get(id) as { title: string; content: string } | undefined;
+  const row = db.prepare('SELECT title, content FROM knowhows WHERE id = ?').get(id) as { title?: string; content?: string } | undefined;
   if (!row) return null;
   const practiceId = uuid();
   const now = nowIso();
-  db.run('INSERT INTO best_practices (id, knowhow_id, title, summary, content, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [practiceId, id, row.title, createPracticeSummary(row.content), row.content, 'draft', now, now]);
+  const title = String(row.title ?? 'Untitled');
+  const content = String(row.content ?? '');
+  db.run('INSERT INTO best_practices (id, knowhow_id, title, summary, content, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [practiceId, id, title, createPracticeSummary(content), content, 'draft', now, now]);
   db.run('UPDATE knowhows SET status = ?, updated_at = ? WHERE id = ?', ['published', nowIso(), id]);
   persistDb();
-  return { id: practiceId, knowhowId: id, title: row.title, summary: row.content.slice(0, 120), content: row.content, status: 'draft', createdAt: now, updatedAt: now };
+  return { id: practiceId, knowhowId: id, title, summary: content.slice(0, 120), content, status: 'draft', createdAt: now, updatedAt: now };
 }
 
 export async function listBestPractices() {
