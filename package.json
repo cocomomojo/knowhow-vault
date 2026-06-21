@@ -1,0 +1,14 @@
+{
+  "name": "knowhow-vault",
+  "private": true,
+  "workspaces": ["frontend", "backend"],
+  "scripts": {
+    "dev": "concurrently -n frontend,backend -c blue,green \"npm --prefix frontend run dev -- --host 0.0.0.0\" \"npm --prefix backend run dev\"",
+    "build": "npm --prefix frontend run build && npm --prefix backend run build",
+    "prisma:generate": "npm --prefix backend exec prisma generate",
+    "prisma:migrate": "npm --prefix backend exec prisma migrate dev --name init"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

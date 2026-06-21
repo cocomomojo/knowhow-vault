@@ -1,0 +1,9 @@
+node_modules/
+backend/.env
+frontend/.env
+.env
+coverage/
+.vscode/
+dist/
+backend/dist/
+frontend/dist/
