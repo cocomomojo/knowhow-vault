@@ -29,6 +29,12 @@ type BestPractice = {
 
 type Tab = 'capture' | 'workflow' | 'best';
 
+type PersistedState = {
+  themes: Theme[];
+  knowhow: KnowhowItem[];
+  bestPractices: BestPractice[];
+};
+
 const emptyForm = {
   title: '',
   themeId: '',
@@ -37,12 +43,43 @@ const emptyForm = {
   importance: 3,
 };
 
+const STORAGE_KEY = 'knowhow-vault-state:v1';
+
+const readPersistedState = (): PersistedState => {
+  if (typeof window === 'undefined') {
+    return { themes: [], knowhow: [], bestPractices: [] };
+  }
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return { themes: [], knowhow: [], bestPractices: [] };
+    }
+
+    const parsed = JSON.parse(raw) as Partial<PersistedState>;
+    return {
+      themes: Array.isArray(parsed.themes) ? parsed.themes : [],
+      knowhow: Array.isArray(parsed.knowhow) ? parsed.knowhow : [],
+      bestPractices: Array.isArray(parsed.bestPractices) ? parsed.bestPractices : [],
+    };
+  } catch {
+    return { themes: [], knowhow: [], bestPractices: [] };
+  }
+};
+
+const persistState = ({ themes, knowhow, bestPractices }: PersistedState) => {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ themes, knowhow, bestPractices }));
+  }
+};
+
 function App() {
   const [tab, setTab] = useState<Tab>('capture');
   const [themes, setThemes] = useState<Theme[]>([]);
   const [knowhow, setKnowhow] = useState<KnowhowItem[]>([]);
   const [bestPractices, setBestPractices] = useState<BestPractice[]>([]);
   const [form, setForm] = useState(emptyForm);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const collectedCount = knowhow.filter((item) => item.status === 'collected').length;
   const analyzedCount = knowhow.filter((item) => item.status === 'analyzed').length;
@@ -50,14 +87,34 @@ function App() {
   const practiceCount = bestPractices.length;
 
   const loadAll = async () => {
-    const [themesRes, knowhowRes, practicesRes] = await Promise.all([
-      fetch('/api/themes'),
-      fetch('/api/knowhow'),
-      fetch('/api/best-practices'),
-    ]);
-    setThemes(await themesRes.json());
-    setKnowhow(await knowhowRes.json());
-    setBestPractices(await practicesRes.json());
+    const persisted = readPersistedState();
+    setThemes(persisted.themes);
+    setKnowhow(persisted.knowhow);
+    setBestPractices(persisted.bestPractices);
+
+    try {
+      const [themesRes, knowhowRes, practicesRes] = await Promise.all([
+        fetch('/api/themes'),
+        fetch('/api/knowhow'),
+        fetch('/api/best-practices'),
+      ]);
+
+      if (themesRes.ok && knowhowRes.ok && practicesRes.ok) {
+        const nextThemes = await themesRes.json();
+        const nextKnowhow = await knowhowRes.json();
+        const nextBestPractices = await practicesRes.json();
+        setThemes(nextThemes);
+        setKnowhow(nextKnowhow);
+        setBestPractices(nextBestPractices);
+        persistState({ themes: nextThemes, knowhow: nextKnowhow, bestPractices: nextBestPractices });
+        setNotice(null);
+        return;
+      }
+    } catch {
+      // fall back to local storage data below
+    }
+
+    setNotice('バックエンドに接続できないため、入力内容はブラウザに保存されています。');
   };
 
   useEffect(() => {
@@ -67,43 +124,130 @@ function App() {
   const handleCreateTheme = async () => {
     const name = window.prompt('テーマ名を入力してください');
     if (!name) return;
-    const res = await fetch('/api/themes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description: '追加テーマ' }),
-    });
-    if (res.ok) {
-      await loadAll();
+
+    try {
+      const res = await fetch('/api/themes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description: '追加テーマ' }),
+      });
+
+      if (res.ok) {
+        await loadAll();
+        return;
+      }
+    } catch {
+      // fall back to local storage
     }
+
+    const newTheme: Theme = { id: `theme-${Date.now()}`, name, description: '追加テーマ' };
+    const nextThemes = [newTheme, ...themes];
+    setThemes(nextThemes);
+    persistState({ themes: nextThemes, knowhow, bestPractices });
+    setNotice('テーマはローカルに保存されました。');
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const res = await fetch('/api/knowhow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    if (res.ok) {
-      setForm(emptyForm);
-      await loadAll();
-      setTab('workflow');
+
+    try {
+      const res = await fetch('/api/knowhow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
+      if (res.ok) {
+        setForm(emptyForm);
+        await loadAll();
+        setTab('workflow');
+        return;
+      }
+    } catch {
+      // fall back to local storage
     }
+
+    const newItem: KnowhowItem = {
+      id: `knowhow-${Date.now()}`,
+      title: form.title,
+      content: form.content,
+      source: form.source || null,
+      importance: form.importance,
+      status: 'collected',
+      themeId: form.themeId,
+      theme: themes.find((theme) => theme.id === form.themeId),
+    };
+
+    const nextKnowhow = [newItem, ...knowhow];
+    setKnowhow(nextKnowhow);
+    persistState({ themes, knowhow: nextKnowhow, bestPractices });
+    setForm(emptyForm);
+    setTab('workflow');
+    setNotice('ノウハウはローカルに保存されました。');
   };
 
   const handleAnalyze = async (id: string) => {
-    await fetch(`/api/knowhow/${id}/analyze`, { method: 'POST' });
-    await loadAll();
+    try {
+      const res = await fetch(`/api/knowhow/${id}/analyze`, { method: 'POST' });
+      if (res.ok) {
+        await loadAll();
+        return;
+      }
+    } catch {
+      // fall back to local storage
+    }
+
+    const nextKnowhow = knowhow.map((item) => (item.id === id ? { ...item, status: 'analyzed' } : item));
+    setKnowhow(nextKnowhow);
+    persistState({ themes, knowhow: nextKnowhow, bestPractices });
+    setNotice('分析状態をローカルで更新しました。');
   };
 
   const handleOrganize = async (id: string) => {
-    await fetch(`/api/knowhow/${id}/organize`, { method: 'POST' });
-    await loadAll();
+    try {
+      const res = await fetch(`/api/knowhow/${id}/organize`, { method: 'POST' });
+      if (res.ok) {
+        await loadAll();
+        return;
+      }
+    } catch {
+      // fall back to local storage
+    }
+
+    const nextKnowhow = knowhow.map((item) => (item.id === id ? { ...item, status: 'analyzed' } : item));
+    setKnowhow(nextKnowhow);
+    persistState({ themes, knowhow: nextKnowhow, bestPractices });
+    setNotice('整理状態をローカルで更新しました。');
   };
 
   const handlePublish = async (id: string) => {
-    await fetch(`/api/knowhow/${id}/publish`, { method: 'POST' });
-    await loadAll();
+    try {
+      const res = await fetch(`/api/knowhow/${id}/publish`, { method: 'POST' });
+      if (res.ok) {
+        await loadAll();
+        return;
+      }
+    } catch {
+      // fall back to local storage
+    }
+
+    const targetItem = knowhow.find((item) => item.id === id);
+    if (!targetItem) return;
+
+    const nextKnowhow = knowhow.map((item) => (item.id === id ? { ...item, status: 'published' } : item));
+    const practice: BestPractice = {
+      id: `practice-${Date.now()}`,
+      title: targetItem.title,
+      summary: targetItem.content.slice(0, 120),
+      content: targetItem.content,
+      status: 'draft',
+      knowhowId: id,
+    };
+    const nextBestPractices = [practice, ...bestPractices];
+    setKnowhow(nextKnowhow);
+    setBestPractices(nextBestPractices);
+    persistState({ themes, knowhow: nextKnowhow, bestPractices: nextBestPractices });
+    setNotice('ベストプラクティスをローカルに追加しました。');
   };
 
   return (
@@ -152,6 +296,7 @@ function App() {
             <button onClick={handleCreateTheme} className="secondary">テーマを追加</button>
           </div>
           <div className="helper-box">まずはテーマを作ってから、経験や気づきを残すと次のステップに進めます。</div>
+          {notice && <div className="helper-box">{notice}</div>}
           <form onSubmit={handleSubmit} className="form-grid">
             <input
               placeholder="タイトル"
