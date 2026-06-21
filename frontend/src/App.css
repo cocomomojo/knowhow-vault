@@ -148,7 +148,8 @@ input, textarea, select {
   padding: 12px 13px;
   border: 1px solid #d1d5db;
   border-radius: 12px;
-  background: #f8fafc;
+  background: #ffffff;
+  color: #111827;
 }
 
 input:focus,
