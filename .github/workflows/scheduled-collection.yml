@@ -1,0 +1,21 @@
+name: Scheduled collection
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  collect:
+    if: ${{ secrets.BACKEND_BASE_URL != '' && secrets.COLLECTION_WEBHOOK_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger backend collection job
+        env:
+          BACKEND_BASE_URL: ${{ secrets.BACKEND_BASE_URL }}
+          COLLECTION_WEBHOOK_TOKEN: ${{ secrets.COLLECTION_WEBHOOK_TOKEN }}
+        run: |
+          curl --fail-with-body \
+            -X POST \
+            -H "Authorization: Bearer ${COLLECTION_WEBHOOK_TOKEN}" \
+            "${BACKEND_BASE_URL%/}/api/internal/collection-sources/collect"

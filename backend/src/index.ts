@@ -31,6 +31,13 @@ const contentTypes: Record<string, string> = {
   '.ico': 'image/x-icon',
 };
 
+const allowedOrigins = env.frontendOrigin
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOrigin = allowedOrigins.length === 0 || allowedOrigins.includes('*') ? '*' : allowedOrigins;
+
 async function serveFrontendAsset(requestPath: string) {
   const sanitizedPath = requestPath === '/' ? '/index.html' : requestPath;
   const resolvedPath = path.resolve(frontendDistDir, `.${sanitizedPath}`);
@@ -64,7 +71,18 @@ async function serveFrontendAsset(requestPath: string) {
 }
 
 const app = new Hono();
-app.use('/api/*', cors());
+app.use('/api/*', cors({ origin: corsOrigin }));
+
+function hasValidCollectionToken(request: Request) {
+  if (!env.collectionWebhookToken) {
+    return false;
+  }
+
+  const authHeader = request.headers.get('authorization')?.trim() ?? '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : '';
+  const rawToken = request.headers.get('x-collection-token')?.trim() ?? '';
+  return bearerToken === env.collectionWebhookToken || rawToken === env.collectionWebhookToken;
+}
 
 app.get('/api/health', (c) => c.json({ ok: true, aiConfigured: Boolean(env.githubModelsToken) }));
 
@@ -103,6 +121,19 @@ app.post('/api/collection-sources/:id/collect', async (c) => {
 });
 
 app.post('/api/collection-sources/collect', async (c) => {
+  const results = await collectFromAllSources();
+  return c.json({ results });
+});
+
+app.post('/api/internal/collection-sources/collect', async (c) => {
+  if (!env.collectionWebhookToken) {
+    return c.json({ error: 'collection webhook token is not configured' }, 503);
+  }
+
+  if (!hasValidCollectionToken(c.req.raw)) {
+    return c.json({ error: 'unauthorized' }, 401);
+  }
+
   const results = await collectFromAllSources();
   return c.json({ results });
 });

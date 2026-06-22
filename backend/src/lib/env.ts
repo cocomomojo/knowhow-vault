@@ -18,10 +18,18 @@ const toConfiguredToken = (value: string | undefined) => {
   return normalized;
 };
 
+const toResolvedPath = (value: string | undefined, fallback: string) => {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) return fallback;
+  return path.isAbsolute(normalized) ? normalized : path.resolve(repoRoot, normalized);
+};
+
 export const env = {
   port: toNumber(process.env.PORT, 8787),
   githubModelsToken: toConfiguredToken(process.env.COPILOT_GITHUB_TOKEN ?? process.env.GITHUB_TOKEN),
   githubModelsModel: process.env.GITHUB_MODELS_MODEL ?? 'openai/gpt-4.1-mini',
   autoCollectLimit: toNumber(process.env.AUTO_COLLECT_LIMIT, 5),
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? '*',
+  dataDir: toResolvedPath(process.env.DATA_DIR, path.join(backendRoot, 'data')),
+  collectionWebhookToken: toConfiguredToken(process.env.COLLECTION_WEBHOOK_TOKEN),
 };

@@ -1,9 +1,10 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import initSqlJs from 'sql.js';
 import { generateAnalysisWithCopilot, generateBestPracticeWithCopilot } from './ai.js';
 import { collectFeedItems } from './collector.js';
 import { env } from './env.js';
-import { backendDataDir, dbFilePath, sqlWasmPath } from './paths.js';
+import { sqlWasmPath } from './paths.js';
 
 type Theme = {
   id: string;
@@ -81,6 +82,7 @@ type SqlJsModule = Awaited<ReturnType<typeof initSqlJs>>;
 type Database = InstanceType<SqlJsModule['Database']>;
 
 let dbInstance: Database | null = null;
+const dbFilePath = path.join(env.dataDir, 'app.sqlite');
 
 function nowIso() {
   return new Date().toISOString();
@@ -92,7 +94,7 @@ function uuid() {
 
 function persistDb() {
   if (!dbInstance) return;
-  fs.mkdirSync(backendDataDir, { recursive: true });
+  fs.mkdirSync(env.dataDir, { recursive: true });
   fs.writeFileSync(dbFilePath, Buffer.from(dbInstance.export()));
 }
 
@@ -238,7 +240,7 @@ function ensureSchema(db: Database) {
 async function getDb() {
   if (!dbInstance) {
     const SQL = await initSqlJs({ locateFile: () => sqlWasmPath });
-    fs.mkdirSync(backendDataDir, { recursive: true });
+    fs.mkdirSync(env.dataDir, { recursive: true });
 
     if (fs.existsSync(dbFilePath)) {
       dbInstance = new SQL.Database(new Uint8Array(fs.readFileSync(dbFilePath)));
