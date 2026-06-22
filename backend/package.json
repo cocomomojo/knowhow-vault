@@ -16,6 +16,7 @@
     "@hono/node-server": "^2.0.5",
     "dotenv": "^17.4.2",
     "hono": "^4.12.26",
+    "rss-parser": "^3.13.0",
     "sql.js": "^1.14.1"
   },
   "devDependencies": {

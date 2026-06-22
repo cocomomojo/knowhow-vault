@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "concurrently -n frontend,backend -c blue,green \"npm --prefix frontend run dev -- --host 0.0.0.0\" \"npm --prefix backend run dev\"",
     "build": "npm --prefix frontend run build && npm --prefix backend run build",
+    "start": "npm --prefix backend run start",
+    "start:fullstack": "npm run build && npm --prefix backend run start",
     "prisma:generate": "npm --prefix backend exec prisma generate",
     "prisma:migrate": "npm --prefix backend exec prisma migrate dev --name init"
   },
