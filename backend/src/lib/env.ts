@@ -20,7 +20,7 @@ const toConfiguredToken = (value: string | undefined) => {
 
 export const env = {
   port: toNumber(process.env.PORT, 8787),
-  githubModelsToken: toConfiguredToken(process.env.GITHUB_MODELS_TOKEN ?? process.env.GITHUB_TOKEN),
+  githubModelsToken: toConfiguredToken(process.env.COPILOT_GITHUB_TOKEN ?? process.env.GITHUB_TOKEN),
   githubModelsModel: process.env.GITHUB_MODELS_MODEL ?? 'openai/gpt-4.1-mini',
   autoCollectLimit: toNumber(process.env.AUTO_COLLECT_LIMIT, 5),
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? '*',
