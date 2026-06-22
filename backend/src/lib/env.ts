@@ -24,4 +24,6 @@ export const env = {
   githubModelsModel: process.env.GITHUB_MODELS_MODEL ?? 'openai/gpt-4.1-mini',
   autoCollectLimit: toNumber(process.env.AUTO_COLLECT_LIMIT, 5),
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? '*',
+  dataDir: process.env.DATA_DIR?.trim() || path.join(backendRoot, 'data'),
+  collectionWebhookToken: toConfiguredToken(process.env.COLLECTION_WEBHOOK_TOKEN),
 };

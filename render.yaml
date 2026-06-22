@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: knowhow-vault-backend
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 8787
+      - key: DATA_DIR
+        value: /var/data
+      - key: FRONTEND_ORIGIN
+        value: https://cocomomojo.github.io
+      - key: GITHUB_MODELS_MODEL
+        value: openai/gpt-4.1-mini
+      - key: COPILOT_GITHUB_TOKEN
+        sync: false
+      - key: COLLECTION_WEBHOOK_TOKEN
+        generateValue: true
+    disk:
+      name: knowhow-vault-data
+      mountPath: /var/data
+      sizeGB: 1
