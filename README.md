@@ -37,14 +37,14 @@ flowchart LR
 プロジェクトルートに `.env` を作成し、必要に応じて次を設定します。
 
 ```bash
-GITHUB_MODELS_TOKEN=your_github_token_with_models_read
+COPILOT_GITHUB_TOKEN=your_github_token_with_models_read
 GITHUB_MODELS_MODEL=openai/gpt-4.1-mini
 PORT=8787
 AUTO_COLLECT_LIMIT=5
 FRONTEND_ORIGIN=http://localhost:5173
 ```
 
-- `GITHUB_MODELS_TOKEN` を設定すると、分析とベストプラクティス草案を Copilot / GitHub Models で生成します
+- `COPILOT_GITHUB_TOKEN` を設定すると、分析とベストプラクティス草案を Copilot / GitHub Models で生成します
 - 未設定の場合はローカル補完ロジックにフォールバックします
 
 ## 🛠️ ローカル起動
